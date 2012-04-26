@@ -1,0 +1,15 @@
+--query=delete from logs where cs_uri_stem = '/Load_balancer_ping'
+--query=delete from logs where c_ip = '127.0.0.1'
+--query=select ('site.demo.delay.0') as key, count(*) as value from logs  where  time_taken >= 0 and time_taken < 100
+--query=select ('site.demo.delay.100') as key, count(*) as value from logs  where  time_taken >= 100 and time_taken < 200
+--query=select ('site.demo.delay.200') as key, count(*) as value from logs  where  time_taken >= 200 and time_taken < 500
+--query=select ('site.demo.delay.500') as key, count(*) as value from logs  where  time_taken >= 500 and time_taken < 1000
+--query=select ('site.demo.delay.1000') as key, count(*) as value from logs  where  time_taken >= 1000 and time_taken < 2000 
+--query=select ('site.demo.delay.2000') as key, count(*) as value from logs  where  time_taken >= 2000 and time_taken < 5000
+--query=select ('site.demo.delay.5000') as key, count(*) as value from logs  where  time_taken >= 5000
+--query=select ('site.demo.delay.mean') as key, avg(time_taken) as value from logs
+--query=select ('site.demo.delay.hits') as key, count(*) as value from logs 
+--query=select ('site.demo.time') as key, sum(time_taken) as value from logs
+--query=select ('site.demo.hits') as key, count(*) as value from logs
+--query=select ('site.demo.status.' || cast(sc_status as string)) as key, count(sc_status) as hits from logs group by sc_status
+--query=4,select 'site', 'demo', 'uri', uri2graphite(cs_uri_stem), percentile50(time_taken) as median, percentile95(time_taken) as p95, count(*) as hits, sum(time_taken) as total from logs   where sc_status=200 and ext(cs_uri_stem) not in ('bmp','css','csv','flv','gif','htm','html','ico','jpg','js','pdf','png','swf','txt','xml','zip','bas','cfm','cfml','cgi','dat','dll','do','exe','hsp','htaccess','htw','ida','idq','info','ini','jpeg','jsp','jspa','log','mp3','nlm','nsf','php','php3','php4','pl','printer','rb','shtm','shtml','sqlite','stm','tiff','xsql') group by cs_uri_stem

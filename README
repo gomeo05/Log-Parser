@@ -1,0 +1,91 @@
+Xero IIS Log parser
+
+Copyright (c) 2012 Xero Ltd <http://www.xero.com/>
+
+May be distributed and used in accordance with the terms listed
+in the LICENSE file that accompanies the source code.
+
+
+This log parser's primary purpose is to take IIS log files,
+currently with a hardcoded period of 300 seconds, parse them
+through a pipeline that allows their contents to be normalised,
+and then execute queries against them and push this data into
+Graphite.
+
+Queries are executed against an in-memory SQLite database.
+Extra tables can be loaded into this database via the
+--table=(table_name)=(file) parameter.  The file must be
+in IIS log format.  This is useful if you have e.g. a list of
+server IPs and the sites they map to, as you can load in
+such a table and join to it in your queries.
+
+If you want to do especially clever things with your logs,
+opportunities for customisation include
+* Add a data-munging block (like strip_guids.rb, add_vip.rb)
+  to change, filter or add columns to your log data
+* Define custom SQLite functions in logparser/sqlite.rb
+
+
+RUN_AGGREGATOR
+
+ruby run_aggregator.rb '@queries.txt' \
+  --lock_dir=logparser.lock --cutoff_file=log_cutoff.txt \
+  --out="/logs/SLUG.log.gz" --checkpoint=checkpoint.marshal \
+  --zero="zero.txt" --graphite_host=127.0.0.1 --graphite_port=2003 \
+  --runs=5 \
+  --strip-guids \
+  --nagios-map=nagios.xml --nagios-cmd-file=/var/lib/nagios3/rw/nagios.cmd \
+  '/logmnt/*/W3SVC*/*.log' '/logmnt/*/*/W3SVC*/*.log'
+
+This will 
+
+--runs=5
+  run up to 5 times (each run processes a 300 second section of
+  logfile)
+
+--out="/logs/SLUG.log.gz"
+  write combined logs out to /logs/<timestamp>.log.gz
+  
+--checkpoint=checkpoint.marshal
+  store its checkpoint data (how far it is through the current
+  logfile set) in "checkpoint.marshal"
+  
+--cutoff_file=log_cutoff.txt
+  store the time boundary at which the last log processing occurred
+  
+--strip-guids
+  Filter the logs to turn GUIDs in URLs to [GUID]
+  
+--nagios-map=nagios.xml
+--nagios-cmd-file=/var/lib/nagios3/rw/nagios.cmd
+  Nagios alerting support (see the included nagios.xml for an example)
+
+--graphite_host=127.0.0.1 --graphite_port=2003
+  Host and port that graphite is listening on.
+  
+'@queries.txt'
+  Read queries to perform from this file
+
+'/logmnt/*/...'
+  Read these logfiles.
+
+The first time that run_aggregator is run, it will write out a checkpoint file
+marking all the files you've passed in as already read, and then exit.  So
+if you want to read in your old data, run it the first time without any log
+files.
+
+
+LOGPARSER
+
+Intended for ad-hoc queries, this takes essentially the same
+parameters as run_aggregator, without the cutoff, nagios or graphite
+support.
+
+
+LOGSERVER
+
+Currently unused code to run a JSON-over-HTTP server that will pick
+up the combined logs written out by run_aggregator, keep them in
+an in-memory database, and allow queries to be run against them.
+
+

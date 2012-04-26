@@ -1,0 +1,4 @@
+<nagios>
+  <point graphite="site.demo.hits" host="sites" service="demo site hits"
+warning="100" critical="200" />
+</nagios>
